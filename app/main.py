@@ -1,3 +1,5 @@
+#uvicorn app.main:app --reload
+
 #Bibliotecas
 from fastapi import FastAPI
 from app.routers.auth import auth_routers
