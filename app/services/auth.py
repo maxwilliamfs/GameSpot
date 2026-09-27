@@ -14,7 +14,7 @@ async def create(user : UserCreateSchema):
     dual_user = await get_user(user.email)
     if dual_user is None:
         crypt_password = bcrypt_context.hash(user.password)
-        await users_collection.insert_one({"name": user.name, "email": user.email, "password": crypt_password, "cart": []})
+        await users_collection.insert_one({"name": user.name, "email": user.email, "password": crypt_password, "cart": [], "admin" : False})
     else:
         raise HTTPException(status_code=400,detail="ERRO: Email ja cadastrado")
 

@@ -1,15 +1,19 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from app.core.database import games_collection
+from app.schemas.games import CreateGameSchema,UpdateGameSchema
+from app.core.secure import verify_admin
+from app.services.games import create, update, search
 
 games_router = APIRouter(prefix="/games",tags=["Busca de Jogos"])
 
 @games_router.get("/search/{name}")
-async def search(name : str):
-    cursor = games_collection.find({"titulo" : {"$regex" : name, "$options" : "i"}})
-    results = await cursor.to_list(length=20)
+async def search_game(name : str):
+    return search(name)
 
-    for result in results:
-        result["_id"] = str(result["_id"])
-    return results
+@games_router.post("/create")
+async def create_game(game : CreateGameSchema, admin_user = Depends(verify_admin)):
+    return await create(game)
 
-
+@games_router.put("/update/{game_id}")
+async def update_game(game_id : str, update_data : CreateGameSchema, admin_user = Depends(verify_admin)):
+    return await update(game_id,update_data)
