@@ -15,4 +15,12 @@ async def verify_token(token : str = Depends(OAuth2Schema)):
     except JWTError:
         raise HTTPException(status_code=401, detail="ERRO: Acesso Negado!!!")
     user = await users_collection.find_one({"_id" : ObjectId(dic_info.get("sub"))})
+    if user is None:
+        raise HTTPException(status_code=401,detail="ERRO: Usuario Invalido!!!")
     return user
+
+async def verify_admin(user : dict = Depends(verify_token)):
+    if user.get("admin"):
+        return user
+    else:
+        raise HTTPException(status_code=403,detail="ERRO: Acesso Negado!!!")

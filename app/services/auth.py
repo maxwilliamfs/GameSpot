@@ -6,7 +6,7 @@ from app.schemas.auth import UserLoginSchema
 from app.core.conf import settings
 from app.core.secure import bcrypt_context,verify_token
 from fastapi import HTTPException, Depends
-from jose import JWTError,jwt
+from jose import jwt
 from datetime import timedelta,datetime,timezone
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -54,9 +54,6 @@ async def get_token(id_user : ObjectId, time_stamp : timedelta = timedelta(minut
     return jwt.encode(token_dic,settings.SECRET_KEY,settings.ALGORITHM)
 
 async def refresh_token(user):
-    if user is None:
-        raise HTTPException(status_code=401,detail="ERRO: Acesso Negado!!!")
-    else:
-        access_token = await get_token(user.get("_id"))
-        return {"access_token": access_token,
-                "token_type": "Bearer"}
+    access_token = await get_token(user.get("_id"))
+    return {"access_token": access_token,
+            "token_type": "Bearer"}
