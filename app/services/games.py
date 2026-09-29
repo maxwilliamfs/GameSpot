@@ -41,4 +41,3 @@ async def delete(game_id : str):
     else:
         games_collection.delete_one({"_id" : ObjectId(game_id)})
         return {"message" : "Game deleted successfully!!!"}
-
