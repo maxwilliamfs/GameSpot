@@ -1,8 +1,7 @@
 from pydantic import BaseModel
-from typing import List
+from app.core.enums import StoresEnum
 
-class StorePriceSchema(BaseModel):
-    store: str
+class StorePriceDetails(BaseModel):
     price: float
     cheapest_price: float
 
@@ -10,14 +9,14 @@ class CreateGameSchema(BaseModel):
     title: str
     developer: str
     all_time_cheapest_price: float
-    prices: List[StorePriceSchema]
+    prices: dict[StoresEnum, StorePriceDetails]
 
 class UpdateGameSchema(BaseModel):
     id: int
     title: str
     developer: str
     all_time_cheapest_price: float
-    prices: List[StorePriceSchema]
+    prices: dict[StoresEnum, StorePriceDetails]
 
 
 

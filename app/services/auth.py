@@ -4,26 +4,25 @@ from app.core.database import users_collection
 from app.schemas.auth import UserCreateSchema
 from app.schemas.auth import UserLoginSchema
 from app.core.conf import settings
-from app.core.secure import bcrypt_context,verify_token
-from fastapi import HTTPException, Depends
+from app.core.secure import bcrypt_context
+from fastapi import HTTPException, Response, status
 from jose import jwt
 from datetime import timedelta,datetime,timezone
 from fastapi.security import OAuth2PasswordRequestForm
-from app.schemas.cart import CartItemSchema
-from typing import List
 
 async def create(user : UserCreateSchema):
     dual_user = await get_user(user.email)
     if dual_user is None:
         crypt_password = bcrypt_context.hash(user.password)
         await users_collection.insert_one({"name": user.name, "email": user.email, "password": crypt_password, "cart_count" : 0, "cart": [], "admin" : False})
+
     else:
         raise HTTPException(status_code=400,detail="ERRO: Email ja cadastrado")
 
 async def login(user_login : UserLoginSchema):
     user = await get_user(user_login.email)
     if user is None:
-        return HTTPException(status_code=400,detail="ERRO: Email nao cadastrado")
+        raise HTTPException(status_code=400,detail="ERRO: Email nao cadastrado")
     else:
         if bcrypt_context.verify(user_login.password,user.get("password")):
             access_token = await get_token(user.get("_id"))
@@ -32,7 +31,7 @@ async def login(user_login : UserLoginSchema):
                     "refresh_token" : refresh_token_,
                     "token_type" : "Bearer"}
         else:
-            return HTTPException(status_code=400, detail="ERRO: Senha Invalida")
+            raise HTTPException(status_code=400, detail="ERRO: Senha Invalida")
 
 async def login_oauth2(form : OAuth2PasswordRequestForm):
     user = await get_user(form.username)
@@ -44,7 +43,7 @@ async def login_oauth2(form : OAuth2PasswordRequestForm):
             return {"access_token" : access_token,
                     "token_type" : "Bearer"}
         else:
-            return HTTPException(status_code=400, detail="ERRO: Senha Invalida")
+            raise HTTPException(status_code=400, detail="ERRO: Senha Invalida")
 
 async def get_user(email : str):
     user = await users_collection.find_one({"email": email})
@@ -59,3 +58,4 @@ async def refresh_token(user):
     access_token = await get_token(user.get("_id"))
     return {"access_token": access_token,
             "token_type": "Bearer"}
+

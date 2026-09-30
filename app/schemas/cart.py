@@ -4,7 +4,7 @@ from app.core.enums import StoresEnum
 
 class CartItemSchema(BaseModel):
     game_id: str
-    name: str
+    title: str
     store: str
     price: float
 

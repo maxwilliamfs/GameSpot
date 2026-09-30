@@ -1,4 +1,5 @@
 from bson import ObjectId
+from fastapi import HTTPException
 
 from app.core.database import users_collection
 from app.schemas.cart import CartItemInsertSchema, CartItemSchema
@@ -9,17 +10,33 @@ async def add(user, cart_insert : CartItemInsertSchema):
 
     store_name = cart_insert.store.value
     prices = game.get("prices")
-    price = prices.get(store_name)
+    store = prices.get(store_name)
 
     cart_item = CartItemSchema(
         game_id=cart_insert.game_id,
-        name=game.get("name"),
+        title=game.get("title"),
         store= store_name,
-        price= price
+        price= store.get("price")
     )
     item_dict = cart_item.model_dump()
 
     await users_collection.update_one({"_id" : user.get("_id")},
-    {"$inc" : {"cart_count" : 1},"addToSet" : {"cart" : cart_item}})
+    {"$inc" : {"cart_count" : 1},"$addToSet" : {"cart" : item_dict}})
 
     return item_dict
+
+async def delete(user, game_id : str):
+    user_cart = user.get("cart")
+
+    for game in user_cart:
+        if game_id == game.get("game_id"):
+            await users_collection.update_one({"_id" : ObjectId(user.get("_id"))},{"$pull":{"cart" : game}})
+            return {"mensagem": "jogo removido do carrinho com sucesso"}
+
+    raise HTTPException(status_code=404,detail="Jogo nao encontrado no carrinho")
+
+async def get(user):
+    if user.get("cart_count") == 0:
+        return {"mensagem" : "Nao ha jogos no carrinho!!!"}
+    else:
+        return user.get("cart")

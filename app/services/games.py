@@ -21,8 +21,8 @@ async def search(name : str):
     return results
 
 async def create(game : CreateGameSchema):
-    game_dict = game.model_dump()
-    games_collection.insert_one(game_dict)
+    game_dict = game.model_dump(mode="json")
+    await games_collection.insert_one(game_dict)
     return {"mensagem" : "jogo salvo com sucesso"}
 
 async def update(game_id : str, game : CreateGameSchema):
