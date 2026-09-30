@@ -1,11 +1,10 @@
 from bson import ObjectId
-
+from app.core.enums import TokenTypesEnum
 from app.core.database import users_collection
-from app.schemas.auth import UserCreateSchema
-from app.schemas.auth import UserLoginSchema
+from app.schemas.auth import UserCreateSchema,UserLoginSchema,UserResponseSchema
 from app.core.conf import settings
 from app.core.secure import bcrypt_context
-from fastapi import HTTPException, Response, status
+from fastapi import HTTPException
 from jose import jwt
 from datetime import timedelta,datetime,timezone
 from fastapi.security import OAuth2PasswordRequestForm
@@ -14,48 +13,56 @@ async def create(user : UserCreateSchema):
     dual_user = await get_user(user.email)
     if dual_user is None:
         crypt_password = bcrypt_context.hash(user.password)
-        await users_collection.insert_one({"name": user.name, "email": user.email, "password": crypt_password, "cart_count" : 0, "cart": [], "admin" : False})
-
+        result = await users_collection.insert_one({"name": user.name, "email": user.email, "password": crypt_password, "cart_count" : 0, "cart": [], "admin" : False})
+        response = UserResponseSchema(
+            id=str(result.inserted_id),
+            name= user.name,
+            email= user.email,
+            admin= False,
+            cart_count= 0,
+            cart= []
+        )
+        return response.model_dump()
     else:
-        raise HTTPException(status_code=400,detail="ERRO: Email ja cadastrado")
+        raise HTTPException(status_code=400,detail="ERROR: Email already exists!!!!")
 
 async def login(user_login : UserLoginSchema):
     user = await get_user(user_login.email)
     if user is None:
-        raise HTTPException(status_code=400,detail="ERRO: Email nao cadastrado")
+        raise HTTPException(status_code=400,detail="ERRO: Email not found")
     else:
         if bcrypt_context.verify(user_login.password,user.get("password")):
-            access_token = await get_token(user.get("_id"))
-            refresh_token_ = await get_token(user.get("_id"), timedelta(days=7))
+            access_token = await get_token(user.get("_id"),TokenTypesEnum.Access_Token)
+            refresh_token_ = await get_token(user.get("_id"),TokenTypesEnum.Refresh_Token, timedelta(days=7))
             return {"access_token" : access_token,
                     "refresh_token" : refresh_token_,
                     "token_type" : "Bearer"}
         else:
-            raise HTTPException(status_code=400, detail="ERRO: Senha Invalida")
+            raise HTTPException(status_code=400, detail="ERRO: Invalid password")
 
 async def login_oauth2(form : OAuth2PasswordRequestForm):
     user = await get_user(form.username)
     if user is None:
-        return HTTPException(status_code=400,detail="ERRO: Email nao cadastrado")
+        raise HTTPException(status_code=400,detail="ERRO: Email not found")
     else:
         if bcrypt_context.verify(form.password,user.get("password")):
-            access_token = await get_token(user.get("_id"))
+            access_token = await get_token(user.get("_id"),TokenTypesEnum.Access_Token)
             return {"access_token" : access_token,
                     "token_type" : "Bearer"}
         else:
-            raise HTTPException(status_code=400, detail="ERRO: Senha Invalida")
+            raise HTTPException(status_code=400, detail="ERRO: Invalid password")
 
 async def get_user(email : str):
     user = await users_collection.find_one({"email": email})
     return user
 
-async def get_token(id_user : ObjectId, time_stamp : timedelta = timedelta(minutes=30)):
+async def get_token(id_user : ObjectId,type : TokenTypesEnum, time_stamp : timedelta = timedelta(minutes=30)):
     expiration_date = datetime.now(timezone.utc) + time_stamp
-    token_dic = {"sub" : str(id_user), "exp" : expiration_date}
+    token_dic = {"sub" : str(id_user),"type": type.value, "exp" : expiration_date}
     return jwt.encode(token_dic,settings.SECRET_KEY,settings.ALGORITHM)
 
 async def refresh_token(user):
-    access_token = await get_token(user.get("_id"))
+    access_token = await get_token(user.get("_id"),TokenTypesEnum.Access_Token)
     return {"access_token": access_token,
             "token_type": "Bearer"}
 

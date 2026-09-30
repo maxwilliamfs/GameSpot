@@ -18,5 +18,9 @@ class UpdateGameSchema(BaseModel):
     all_time_cheapest_price: float
     prices: dict[StoresEnum, StorePriceDetails]
 
-
-
+class GameResponseSchema(BaseModel):
+    id: str
+    title: str
+    developer: str
+    all_time_cheapest_price: float
+    prices: dict[StoresEnum, StorePriceDetails]

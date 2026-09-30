@@ -31,12 +31,12 @@ async def delete(user, game_id : str):
     for game in user_cart:
         if game_id == game.get("game_id"):
             await users_collection.update_one({"_id" : ObjectId(user.get("_id"))},{"$pull":{"cart" : game}})
-            return {"mensagem": "jogo removido do carrinho com sucesso"}
+            return {"message": "Game removed successfully"}
 
-    raise HTTPException(status_code=404,detail="Jogo nao encontrado no carrinho")
+    raise HTTPException(status_code=404,detail="ERROR: Game not found")
 
 async def get(user):
     if user.get("cart_count") == 0:
-        return {"mensagem" : "Nao ha jogos no carrinho!!!"}
+        return {"message" : "Empty cart!!!"}
     else:
         return user.get("cart")
