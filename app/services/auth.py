@@ -3,7 +3,8 @@ from bson.errors import InvalidId
 
 from app.core.enums import TokenTypesEnum
 from app.core.database import users_collection
-from app.schemas.auth import UserCreateSchema,UserLoginSchema,UserResponseSchema, UserUpdateSchema
+from app.schemas.auth import UserCreateSchema, UserLoginSchema, UserResponseSchema, UserUpdateSchema, \
+    UserUpdateAdminSchema
 from app.core.conf import settings
 from app.core.secure import bcrypt_context
 from fastapi import HTTPException
@@ -81,7 +82,7 @@ async def search(id: str):
     user = await id_search(id)
     return await model_dumper(user,str(user.get("_id")))
 
-async def update(new_data : UserUpdateSchema, id: str):
+async def update(new_data : UserUpdateAdminSchema, id: str):
     user_db = await id_search(id)
     if user_db is None:
         raise HTTPException(status_code=404, detail="ERROR: User not Found")
@@ -89,6 +90,14 @@ async def update(new_data : UserUpdateSchema, id: str):
     await users_collection.update_one({"_id" : ObjectId(id)},{"$set" : user_dict})
     response = await id_search(id)
     return await model_dumper(response,id)
+
+async def update_password(id: str, password: str):
+    user_db = await id_search(id)
+    if user_db is None:
+        raise HTTPException(status_code=404, detail="ERROR: User not Found")
+    crypt_password = bcrypt_context.hash(password)
+    await users_collection.update_one({"_id" : ObjectId(id)},{"$set" : {"password" : crypt_password}})
+
 
 async def update_user(new_data : UserUpdateSchema, id: str, user):
     user_db = await id_search(id)
@@ -101,6 +110,13 @@ async def update_user(new_data : UserUpdateSchema, id: str, user):
     response = await id_search(id)
     return await model_dumper(response,id)
 
+async def delete_admin(id: str):
+    user = await id_search(id)
+    await users_collection.delete_one({"_id" : ObjectId(id)})
+
+async def delete_user(user):
+    user = await id_search(user.get("_id"))
+    await users_collection.delete_one({"_id": ObjectId(user.get("_id"))})
 
 async def model_dumper(user,id : str):
     response = UserResponseSchema(
