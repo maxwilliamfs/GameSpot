@@ -9,12 +9,14 @@ from fastapi import HTTPException, Depends
 from jose import jwt
 from datetime import timedelta,datetime,timezone
 from fastapi.security import OAuth2PasswordRequestForm
+from app.schemas.cart import CartItemSchema
+from typing import List
 
 async def create(user : UserCreateSchema):
     dual_user = await get_user(user.email)
     if dual_user is None:
         crypt_password = bcrypt_context.hash(user.password)
-        await users_collection.insert_one({"name": user.name, "email": user.email, "password": crypt_password, "cart": [], "admin" : False})
+        await users_collection.insert_one({"name": user.name, "email": user.email, "password": crypt_password, "cart_count" : 0, "cart": [], "admin" : False})
     else:
         raise HTTPException(status_code=400,detail="ERRO: Email ja cadastrado")
 
