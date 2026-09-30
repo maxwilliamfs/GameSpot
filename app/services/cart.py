@@ -30,7 +30,7 @@ async def delete(user, game_id : str):
 
     for game in user_cart:
         if game_id == game.get("game_id"):
-            await users_collection.update_one({"_id" : ObjectId(user.get("_id"))},{"$pull":{"cart" : game}})
+            await users_collection.update_one({"_id" : ObjectId(user.get("_id"))},{"$pull":{"cart" : game},"$inc" : {"cart_count" : -1}})
             return {"message": "Game removed successfully"}
 
     raise HTTPException(status_code=404,detail="ERROR: Game not found")

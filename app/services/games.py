@@ -23,30 +23,17 @@ async def search(name : str):
 async def create(game : CreateGameSchema):
     game_dict = game.model_dump(mode="json")
     result = await games_collection.insert_one(game_dict)
-    response = GameResponseSchema(
-        id= result.inserted_id,
-        title= game.title,
-        developer= game.developer,
-        all_time_cheapest_price= game.all_time_cheapest_price,
-        prices= game.prices
-    )
-    return response.model_dump()
+    return await model_dumper(game,result.inserted_id)
 
 async def update(game_id : str, game : CreateGameSchema):
     game_db = await id_search(game_id)
     if game_db is None:
         raise HTTPException(status_code=404,detail="ERROR: Game not Founded")
     else:
-        game_dict = game.model_dump()
+        game_dict = game.model_dump(exclude_unset=True)
         await games_collection.update_one({"_id" : ObjectId(game_id)},{"$set" : game_dict})
-        response = GameResponseSchema(
-            id=game_id,
-            title=game.title,
-            developer=game.developer,
-            all_time_cheapest_price=game.all_time_cheapest_price,
-            prices=game.prices
-        )
-        return response.model_dump()
+        response = await id_search(game_id)
+        return await model_dumper(response,game_id)
 
 async def delete(game_id : str):
     game = await id_search(game_id)
@@ -55,3 +42,13 @@ async def delete(game_id : str):
     else:
         games_collection.delete_one({"_id" : ObjectId(game_id)})
         return {"message" : "Game deleted successfully!!!"}
+
+async def model_dumper(game : CreateGameSchema, id: str):
+    response = GameResponseSchema(
+        id=id,
+        title=game.title,
+        developer=game.developer,
+        all_time_cheapest_price=game.all_time_cheapest_price,
+        prices=game.prices
+    )
+    return response.model_dump()

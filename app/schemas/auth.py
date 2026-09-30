@@ -7,6 +7,15 @@ class UserCreateSchema(BaseModel):
     email: str
     password: str
 
+class UserUpdateAdminSchema(BaseModel):
+    name: str | None = None
+    email: str | None = None
+    admin: bool | None = None
+
+class UserUpdateSchema(BaseModel):
+    name: str | None = None
+    email: str | None = None
+
 class UserLoginSchema(BaseModel):
     email: str
     password: str

@@ -1,7 +1,9 @@
 from bson import ObjectId
+from bson.errors import InvalidId
+
 from app.core.enums import TokenTypesEnum
 from app.core.database import users_collection
-from app.schemas.auth import UserCreateSchema,UserLoginSchema,UserResponseSchema
+from app.schemas.auth import UserCreateSchema,UserLoginSchema,UserResponseSchema, UserUpdateSchema
 from app.core.conf import settings
 from app.core.secure import bcrypt_context
 from fastapi import HTTPException
@@ -56,6 +58,15 @@ async def get_user(email : str):
     user = await users_collection.find_one({"email": email})
     return user
 
+async def id_search(id: str):
+    try:
+        user = await users_collection.find_one({"_id": ObjectId(id)})
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="ERRO: Invalid ID")
+    if user is None:
+        raise HTTPException(status_code=404,detail="ERRO: User not found")
+    return user
+
 async def get_token(id_user : ObjectId,type : TokenTypesEnum, time_stamp : timedelta = timedelta(minutes=30)):
     expiration_date = datetime.now(timezone.utc) + time_stamp
     token_dic = {"sub" : str(id_user),"type": type.value, "exp" : expiration_date}
@@ -66,3 +77,38 @@ async def refresh_token(user):
     return {"access_token": access_token,
             "token_type": "Bearer"}
 
+async def search(id: str):
+    user = await id_search(id)
+    return await model_dumper(user,str(user.get("_id")))
+
+async def update(new_data : UserUpdateSchema, id: str):
+    user_db = await id_search(id)
+    if user_db is None:
+        raise HTTPException(status_code=404, detail="ERROR: User not Found")
+    user_dict = new_data.model_dump(exclude_unset=True)
+    await users_collection.update_one({"_id" : ObjectId(id)},{"$set" : user_dict})
+    response = await id_search(id)
+    return await model_dumper(response,id)
+
+async def update_user(new_data : UserUpdateSchema, id: str, user):
+    user_db = await id_search(id)
+    if id != str(user.get("_id")):
+        raise HTTPException(status_code=403, detail="ERRO: Access Blocked!!!")
+    if user_db is None:
+        raise HTTPException(status_code=404, detail="ERROR: User not Found")
+    user_dict = new_data.model_dump(exclude_unset=True)
+    await users_collection.update_one({"_id" : ObjectId(id)},{"$set" : user_dict})
+    response = await id_search(id)
+    return await model_dumper(response,id)
+
+
+async def model_dumper(user,id : str):
+    response = UserResponseSchema(
+        id=id,
+        name=user.get("name"),
+        email=user.get("email"),
+        admin=user.get("admin"),
+        cart_count=user.get("cart_count",0),
+        cart=user.get("cart",[])
+    )
+    return response.model_dump()

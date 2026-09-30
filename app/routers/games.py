@@ -13,7 +13,7 @@ async def search_game(name : str):
 async def create_game(game : CreateGameSchema, admin_user = Depends(verify_admin)):
     return await create(game)
 
-@games_router.put("/update/{game_id}", status_code=status.HTTP_200_OK)
+@games_router.patch("/update/{game_id}", status_code=status.HTTP_200_OK)
 async def update_game(game_id : str, update_data : CreateGameSchema, admin_user = Depends(verify_admin)):
     return await update(game_id,update_data)
 
