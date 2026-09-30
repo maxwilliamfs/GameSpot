@@ -3,7 +3,7 @@ from fastapi import HTTPException
 
 from app.core.database import users_collection
 from app.schemas.cart import CartItemInsertSchema, CartItemSchema
-from app.services.games import id_search
+from app.services.game import id_search
 
 async def add(user, cart_insert : CartItemInsertSchema):
     game = await id_search(str(cart_insert.game_id))
