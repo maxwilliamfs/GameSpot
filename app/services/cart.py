@@ -8,6 +8,10 @@ from app.services.game import id_search
 async def add(user, cart_insert : CartItemInsertSchema):
     game = await id_search(str(cart_insert.game_id))
 
+    for games in user["cart"]:
+        if cart_insert.game_id == games["game_id"]:
+            raise HTTPException(status_code=400,detail="This game already exists in this cart!!!")
+
     store_name = cart_insert.store.value
     prices = game.get("prices")
     store = prices.get(store_name)

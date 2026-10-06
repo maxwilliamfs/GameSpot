@@ -1,7 +1,7 @@
 from bson.errors import InvalidId
 from fastapi import HTTPException
 from bson import ObjectId
-from app.schemas.games import CreateGameSchema, GameResponseSchema
+from app.schemas.games import CreateGameSchema, GameResponseSchema, UpdateGameSchema
 from app.core.database import games_collection
 
 async def id_search(game_id : str):
@@ -12,9 +12,8 @@ async def id_search(game_id : str):
     except InvalidId:
         raise HTTPException(status_code=400,detail="ERROR: INVALID ID!!!")
 
-
 async def search(name : str):
-    cursor = await games_collection.find({"title": {"$regex": name, "$options": "i"}})
+    cursor = games_collection.find({"title": {"$regex": name, "$options": "i"}})
     results = await cursor.to_list(length=20)
     for result in results:
         result["_id"] = str(result["_id"])
@@ -23,32 +22,24 @@ async def search(name : str):
 async def create(game : CreateGameSchema):
     game_dict = game.model_dump(mode="json")
     result = await games_collection.insert_one(game_dict)
-    return await model_dumper(game,result.inserted_id)
+    game_dict["_id"] = str(result.inserted_id)
+    return game_dict
 
-async def update(game_id : str, game : CreateGameSchema):
+async def update(game_id : str, game : UpdateGameSchema):
     game_db = await id_search(game_id)
     if game_db is None:
         raise HTTPException(status_code=404,detail="ERROR: Game not Founded")
     else:
-        game_dict = game.model_dump(exclude_unset=True)
+        game_dict = game.model_dump(mode="json",exclude_unset=True)
         await games_collection.update_one({"_id" : ObjectId(game_id)},{"$set" : game_dict})
         response = await id_search(game_id)
-        return await model_dumper(response,game_id)
+        response["_id"] = str(response["_id"])
+        return response
 
 async def delete(game_id : str):
     game = await id_search(game_id)
     if game is None:
         raise HTTPException(status_code=404,detail="ERROR: Game not Founded")
     else:
-        games_collection.delete_one({"_id" : ObjectId(game_id)})
+        await games_collection.delete_one({"_id" : ObjectId(game_id)})
         return {"message" : "Game deleted successfully!!!"}
-
-async def model_dumper(game : CreateGameSchema, id: str):
-    response = GameResponseSchema(
-        id=id,
-        title=game.title,
-        developer=game.developer,
-        all_time_cheapest_price=game.all_time_cheapest_price,
-        prices=game.prices
-    )
-    return response.model_dump()

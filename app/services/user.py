@@ -3,7 +3,7 @@ from bson.errors import InvalidId
 from fastapi import HTTPException
 
 from app.core.secure import bcrypt_context
-from app.schemas.user import UserUpdateAdminSchema,UserUpdateSchema,UserResponseSchema
+from app.schemas.user import UserUpdateAdminSchema,UserUpdateSchema,UserResponseSchema,UserPasswordUpdateSchema
 from app.core.database import users_collection
 
 async def id_search(id: str):
@@ -17,7 +17,8 @@ async def id_search(id: str):
 
 async def search(id: str):
     user = await id_search(id)
-    return await model_dumper(user,str(user.get("_id")))
+    user["_id"] = str(user["_id"])
+    return user
 
 async def update(new_data : UserUpdateAdminSchema, id: str):
     user_db = await id_search(id)
@@ -26,24 +27,23 @@ async def update(new_data : UserUpdateAdminSchema, id: str):
     user_dict = new_data.model_dump(exclude_unset=True)
     await users_collection.update_one({"_id" : ObjectId(id)},{"$set" : user_dict})
     response = await id_search(id)
-    return await model_dumper(response,id)
+    response["_id"] = str(response["_id"])
+    return response
 
-async def update_password(id: str, password: str):
+async def update_password(id: str, passwordSchema: UserPasswordUpdateSchema):
     user_db = await id_search(id)
     if user_db is None:
         raise HTTPException(status_code=404, detail="ERROR: User not Found")
-    crypt_password = bcrypt_context.hash(password)
+    crypt_password = bcrypt_context.hash(passwordSchema.password)
     await users_collection.update_one({"_id" : ObjectId(id)},{"$set" : {"password" : crypt_password}})
 
 
 async def update_user(new_data : UserUpdateSchema, user):
-    user_db = await id_search(user.get("_id"))
-    if user_db is None:
-        raise HTTPException(status_code=404, detail="ERROR: User not Found")
     user_dict = new_data.model_dump(exclude_unset=True)
-    await users_collection.update_one({"_id" : ObjectId(user.get("_id"))},{"$set" : user_dict})
-    response = await id_search(user.get("_id"))
-    return await model_dumper(response,user.get("_id"))
+    result = await users_collection.update_one({"_id" : ObjectId(user.get("_id"))},{"$set" : user_dict})
+    user_dict = await id_search(user.get("_id"))
+    user_dict["_id"] = str(user["_id"])
+    return user_dict
 
 async def delete_admin(id: str):
     user = await id_search(id)
@@ -52,14 +52,3 @@ async def delete_admin(id: str):
 async def delete_user(user):
     user = await id_search(user.get("_id"))
     await users_collection.delete_one({"_id": ObjectId(user.get("_id"))})
-
-async def model_dumper(user,id : str):
-    response = UserResponseSchema(
-        id=id,
-        name=user.get("name"),
-        email=user.get("email"),
-        admin=user.get("admin"),
-        cart_count=user.get("cart_count",0),
-        cart=user.get("cart",[])
-    )
-    return response.model_dump()

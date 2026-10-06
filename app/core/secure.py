@@ -20,6 +20,7 @@ async def verify_token(token : str = Depends(OAuth2Schema)):
         raise HTTPException(status_code=401, detail="ERRO: Invalid User!!!")
     if user is None:
         raise HTTPException(status_code=401,detail="ERRO: Invalid User!!!")
+    print("teste_erro")
     return user
 
 async def verify_refresh_token(token : str = Depends(OAuth2Schema)):
