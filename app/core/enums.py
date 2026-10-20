@@ -1,10 +1,9 @@
 from enum import Enum, auto
 
 class StoresEnum(Enum):
-    Xbox = "Xbox"
-    Playstation = "Playstation"
+    GOG = "GOG"
+    GreenManGaming = "GreenManGaming"
     Steam = "Steam"
-    Nintendo = "Nintendo"
     EpicGames = "EpicGames"
 
 class TokenTypesEnum(Enum):
