@@ -3,7 +3,6 @@ from app.core.enums import StoresEnum
 
 class StorePriceDetails(BaseModel):
     price: float
-    cheapest_price: float
 
 class CreateGameSchema(BaseModel):
     title: str
