@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, status
 from app.schemas.games import CreateGameSchema,UpdateGameSchema,GameResponseSchema
 from app.core.secure import verify_admin
-from app.services.steam_scrapper import refresh_games
 from app.services.game import create, update, search, delete
-from app.services.cheap_shark import cheap_shark_search
+from app.services.webscapping.cheap_shark import cheap_shark_search
 
 jogos_teste = [
     "Call of Duty®: Modern Warfare® 4",

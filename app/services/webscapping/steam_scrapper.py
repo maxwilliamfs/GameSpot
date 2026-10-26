@@ -1,8 +1,10 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from app.services import cheap_shark
+from app.services.webscapping import cheap_shark
 import time
+import requests
+
 
 def refresh_games():
     options = Options()
@@ -34,3 +36,19 @@ def refresh_games():
 
     time.sleep(1)
     cheap_shark.cheap_shark_search(top_games_titles)
+
+def get_developer(steamID):
+    steam_api_url = "https://store.steampowered.com/api/appdetails"
+    headers = {"User-Agent": "GameSpotApp/1.0 (williammaxbcc4794@gmail.com)"}
+
+    response = requests.get(steam_api_url, params={"appids": steamID}, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+        app_data = data.get(str(steamID), {})
+        if app_data and app_data.get("success"):
+            game_info = app_data.get("data", {})
+            developers = game_info.get("developers", [])
+            if developers:
+                return developers[0]
+    else:
+        return "Missing"
