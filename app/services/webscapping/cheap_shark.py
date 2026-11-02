@@ -1,30 +1,24 @@
+from app.core.conf import Settings
+
 from fastapi import HTTPException
-from app.services.webscapping.steam_scrapper import get_developer
-from app.schemas.games import CreateGameSchema
+from app.schemas.games import CreateGameSchema,StorePriceDetails
+from app.core.enums import StoresEnum,StoreIDEnum
+from app.services.webscapping.steam_api import get_developer
 import requests
 import time
-
-ids = [
-  "324340","None","None","None","327581","152058","202350","306473","206516","281587","328808","None","None","268290","298615","300920","228547","None",
-  "249998","334401","264414","331996","332174","328839","251191","104077","324322","None","None","324169","157695","286574","307902","107598","199815",
-  "211060","144222","260921","308654","236717","291866","None","141021","300679","329912","327456","None","281411","None","None","196050","323482",
-  "102722","239901","330373","None","271592","284226","312443","305806","332769","210978","150036","315191","175863","323772","187747","166717","80",
-  "332210","186966","333483","93389","269728","141220","144894","144209","None","1295","321328","299534","276883","329877","202278","149344","231604",
-  "329516","241552","None","321803","295364","258398","279442","333522","246641","220342","182370","104006","None","252876"
-]
-
+from app.services.game import create
+import asyncio
 cheap_shark_url = "https://www.cheapshark.com/api/1.0/games"
-headers = {"User-Agent": "GameSpotApp/1.0 (williammaxbcc4794@gmail.com)"}
+headers = {"User-Agent": f"GameSpotApp/1.0 {Settings.USER_EMAIL}"}
 
-def cheap_shark_search(top_games):
-    top_games_info = []
-
+async def cheap_shark_search(top_games):
+    top_games_ids = []
     for game in top_games:
         max_tries = 3
         tries = 0
         time_stamp = 1
         for tries in range(max_tries):
-            time.sleep(time_stamp)
+            await asyncio.sleep(time_stamp)
             response = requests.get(cheap_shark_url, params={"title": game}, headers=headers)
             print(response.status_code)
             if response.status_code == 200:
@@ -32,29 +26,70 @@ def cheap_shark_search(top_games):
                 game_cheap_id = ""
                 if len(data) >= 1:
                     game_cheap_id = data[0].get("gameID")
+                    top_games_ids.append(game_cheap_id)
                 else:
-                    game_cheap_id = "None"
-                    top_games_info.append("None")
-                    break
-                top_games_info.append(game_cheap_id)
+                    top_games_ids.append("None")
                 break
             elif response.status_code == 429:
-                time_stamp *= 2
+                retry_after = response.headers.get("Retry-After")
+                if retry_after:
+                    time_stamp = int(retry_after)
+                    print(f"ERROR: Rate Limit. Wait {time_stamp} seconds.")
+                else:
+                    time_stamp *= 2
+                    print(f"ERROR: Rate Limit. Wait {time_stamp} seconds.")
             else:
-                raise HTTPException(status_code=response.status_code,detail="ERROR: Erro in games search")
-    return top_games_info
+                print(f"Error {response.status_code}")
+    for game in top_games_ids:
+        if game != "None":
+            create_game_schema = await id_search(game)
+            if create_game_schema != "None":
+                await create(create_game_schema)
+async def id_search(game_id):
+    max_tries = 3
+    tries = 0
+    time_stamp = 1
+    for tries in range(max_tries):
+        await asyncio.sleep(time_stamp)
+        response = requests.get(cheap_shark_url, params={"id": game_id}, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            if len(data) == 0:
+                return "None"
+            game_prices = data["deals"]
+            prices_ = {}
+            for store in StoresEnum:
+                store_number = StoreIDEnum[store.name].value
+                store_price_details = StorePriceDetails(
+                    price=get_store_price(game_prices, store_number)
+                )
+                prices_[store.value] = store_price_details
 
-def id_search(game_id):
-    response = requests.get(cheap_shark_url, params={"id": game_id}, headers=headers)
-    data = response.json()
+            game = CreateGameSchema(
+                title=data["info"]["title"],
+                all_time_cheapest_price=data["cheapestPriceEver"]["price"],
+                developer=get_developer(data["info"]["steamAppID"]),
+                prices=prices_
+            )
+            return game
+        elif response.status_code == 429:
+            retry_after = response.headers.get("Retry-After")
+            if retry_after:
+                time_stamp = int(retry_after)
+                print(f"ERROR: Rate Limit. Wait {time_stamp} seconds.")
+            else:
+                time_stamp *= 2
+                print(f"ERROR: Rate Limit. Wait {time_stamp} seconds.")
+        else:
+            print(f"Error {response.status_code}, ID: {game_id}")
+    return "None"
 
-    prices = []
+
+def get_store_price(deals,store_number):
+    for deal in deals:
+        if str(deal["storeID"]) == str(store_number):
+            return deal["price"]
+    return "-1"
 
 
-    game = CreateGameSchema(
-        title=data["info"]["title"],
-        all_time_cheapest_price=data["cheapestPriceEver"]["price"],
-        developer=get_developer(data["steamAppID"])
-
-    )
 

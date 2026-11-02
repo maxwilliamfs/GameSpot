@@ -5,8 +5,7 @@ from app.services.webscapping import cheap_shark
 import time
 import requests
 
-
-def refresh_games():
+async def refresh_games():
     options = Options()
     options._binary_location = "/usr/bin/brave"
     navigator = webdriver.Chrome(options=options)
@@ -35,20 +34,5 @@ def refresh_games():
         top_games_titles.append(game.text)
 
     time.sleep(1)
-    cheap_shark.cheap_shark_search(top_games_titles)
-
-def get_developer(steamID):
-    steam_api_url = "https://store.steampowered.com/api/appdetails"
-    headers = {"User-Agent": "GameSpotApp/1.0 (williammaxbcc4794@gmail.com)"}
-
-    response = requests.get(steam_api_url, params={"appids": steamID}, headers=headers)
-    if response.status_code == 200:
-        data = response.json()
-        app_data = data.get(str(steamID), {})
-        if app_data and app_data.get("success"):
-            game_info = app_data.get("data", {})
-            developers = game_info.get("developers", [])
-            if developers:
-                return developers[0]
-    else:
-        return "Missing"
+    navigator.quit()
+    return await cheap_shark.cheap_shark_search(top_games_titles)

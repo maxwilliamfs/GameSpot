@@ -9,6 +9,7 @@ class Settings:
     DATABASE_NAME = os.getenv("DATABASE_NAME","gamespot_db")
     ALGORITHM = os.getenv("ALGORITHM","HS256")
     ACESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACESS_TOKEN_EXPIRE_MINUTES","30"))
+    USER_EMAIL = os.getenv("USER_EMAIL","https://github.com/maxwilliamfs/GameSpot")
 settings = Settings()
 
 

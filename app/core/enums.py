@@ -6,6 +6,12 @@ class StoresEnum(Enum):
     Steam = "Steam"
     EpicGames = "EpicGames"
 
+class StoreIDEnum(Enum):
+    GOG = 7
+    GreenManGaming = 3
+    Steam = 1
+    EpicGames = 25
+
 class TokenTypesEnum(Enum):
     Access_Token = "Access_Token"
     Refresh_Token = "Refresh_Token"

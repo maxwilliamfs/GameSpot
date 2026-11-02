@@ -3,6 +3,7 @@ from app.schemas.games import CreateGameSchema,UpdateGameSchema,GameResponseSche
 from app.core.secure import verify_admin
 from app.services.game import create, update, search, delete
 from app.services.webscapping.cheap_shark import cheap_shark_search
+from app.services.webscapping.steam_scrapper import refresh_games
 
 jogos_teste = [
     "Call of Duty®: Modern Warfare® 4",
@@ -126,5 +127,5 @@ async def delete_game(game_id : str, admin_user = Depends(verify_admin)):
     return await delete(game_id)
 
 @games_router.get("", status_code=status.HTTP_200_OK)
-async def refresh_games_database():
-    return cheap_shark_search(jogos_teste)
+async def refresh_games_database(admin = Depends(verify_admin)):
+    return await refresh_games()
