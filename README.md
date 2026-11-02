@@ -16,6 +16,7 @@ API RESTfull programada em Python, com o uso de Webscrapping, banco de dados e d
 - IDE: JetBrains Pycharm
 - Banco de Dados: MongoDB
 - Ferramenta de WebScrapping: Selenium
+- Conteinerização: Docker
 - Versionamento: Git & GitHub.
 
 ## Execução
