@@ -1,6 +1,6 @@
 # GAMESPOT
 
-
+![Demonstração do Projeto](/assets/docs.png)
 
 API RESTfull programada em Python, com o uso de Webscrapping, banco de dados e docker
 
@@ -14,6 +14,8 @@ API RESTfull programada em Python, com o uso de Webscrapping, banco de dados e d
 - Linguagem: Python (3.14).
 - Ambiente de Desenvolvimento: Arch Linux.
 - IDE: JetBrains Pycharm
+- Banco de Dados: MongoDB
+- Ferramenta de WebScrapping: Selenium
 - Versionamento: Git & GitHub.
 
 ## Execução
@@ -28,7 +30,7 @@ cd GameSpot
 ```
 - Executar projeto:  
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 ## Autor
