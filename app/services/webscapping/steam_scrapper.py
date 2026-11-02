@@ -3,11 +3,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from app.services.webscapping import cheap_shark
 import time
-import requests
 
 async def refresh_games():
     options = Options()
-    options._binary_location = "/usr/bin/brave"
     navigator = webdriver.Chrome(options=options)
     navigator.maximize_window()
     title_name_address = "//a[contains(@href, '/app/') and normalize-space(.) != '']"
