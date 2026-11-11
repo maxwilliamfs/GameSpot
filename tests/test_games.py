@@ -1,13 +1,10 @@
-from http import HTTPMethod
-
 import pytest
 from bson import ObjectId
 from fastapi import HTTPException
-
 from app.schemas.games import CreateGameSchema, StorePriceDetails, UpdateGameSchema
 from app.core.enums import StoresEnum
 from unittest.mock import MagicMock,AsyncMock
-from app.services.game import create, id_search, update
+from app.services.game import create, id_search, update, delete
 from app.core.database import games_collection
 
 @pytest.mark.asyncio
@@ -86,3 +83,37 @@ async def test_update_game(mocker):
     result = await update(fake_id, update_data)
     update_mock.assert_called_once_with({"_id": ObjectId(fake_id)}, {"$set": expected_update_dict})
     assert result["_id"] == fake_id
+
+@pytest.mark.asyncio
+async def test_id_search(mocker):
+    fake_id = "123"
+    with pytest.raises(HTTPException):
+        await id_search(fake_id)
+
+@pytest.mark.asyncio
+async def test_delete_id_error(mocker):
+    fake_id = str(ObjectId())
+    search_mock = mocker.patch(
+        "app.services.game.id_search",
+        new_callable=AsyncMock,
+        return_value=None
+    )
+
+    with pytest.raises(HTTPException):
+        await delete(fake_id)
+
+@pytest.mark.asyncio
+async def test_delete(mocker):
+    fake_id = str(ObjectId())
+    search_mock = mocker.patch(
+        "app.services.game.id_search",
+        new_callable=AsyncMock,
+        return_value="game"
+    )
+    delete_mock = mocker.patch.object(
+        games_collection,
+        "delete_one",
+        new_callable= AsyncMock
+    )
+    await delete(fake_id)
+    delete_mock.assert_called_once_with({"_id" : ObjectId(fake_id)})
