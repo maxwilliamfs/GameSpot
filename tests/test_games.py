@@ -10,24 +10,21 @@ from unittest.mock import MagicMock,AsyncMock
 from app.services.game import create, id_search, update
 from app.core.database import games_collection
 
-@pytest.fixture()
-def game():
+@pytest.mark.asyncio
+async def test_create_game(mocker):
     store_price_details = StorePriceDetails(price=60)
     prices_ = {}
 
     for store in StoresEnum:
         prices_[store] = store_price_details
 
-    game_test = CreateGameSchema(
-    title="Hollow Knight: SilkSong",
-    developer="Team Chery",
-    all_time_cheapest_price=40.0,
-    prices=prices_
+    game = CreateGameSchema(
+        title="Hollow Knight: SilkSong",
+        developer="Team Chery",
+        all_time_cheapest_price=40.0,
+        prices=prices_
     )
-    return game_test
 
-@pytest.mark.asyncio
-async def test_create_game(game, mocker):
     id_ = ObjectId()
     mongo_result = MagicMock()
     mongo_result.inserted_id = id_
@@ -46,15 +43,46 @@ async def test_create_game(game, mocker):
     assert result == expected_result
 
 @pytest.mark.asyncio
-async def test_update_game(game,mocker):
-    mock_wrong_id = mocker.patch(
+async def test_update_game_error(mocker):
+    fake_id = str(ObjectId())
+    data = UpdateGameSchema()
+
+    search_mock = mocker.patch(
         "app.services.game.id_search",
         new_callable=AsyncMock,
         return_value=None
     )
-    fake_id = str(ObjectId())
-    data = UpdateGameSchema()
 
-    with pytest.raises(HTTPException) as ex:
+    with pytest.raises(HTTPException):
         await update(fake_id,data)
 
+@pytest.mark.asyncio
+async def test_update_game(mocker):
+    fake_id = str(ObjectId())
+    old_data = {
+        "_id": fake_id,
+        "title": "Hollow Knight: SilkSong",
+        "developer": "Team Cherry"
+    }
+    new_data = {
+        "_id": fake_id,
+        "title": "Hollow Knight: Silksong - Deluxe",
+        "developer": "Team Cherry"
+    }
+    search_mock = mocker.patch(
+        "app.services.game.id_search",
+        new_callable=AsyncMock,
+        side_effect=[old_data,new_data]
+    )
+
+    update_mock = mocker.patch.object(
+        games_collection,
+        "update_one",
+        new_callable=AsyncMock
+    )
+    update_data = UpdateGameSchema(title="Hollow Knight: Silksong - Deluxe")
+    expected_update_dict = {"title": "Hollow Knight: Silksong - Deluxe"}
+
+    result = await update(fake_id, update_data)
+    update_mock.assert_called_once_with({"_id": ObjectId(fake_id)}, {"$set": expected_update_dict})
+    assert result["_id"] == fake_id
