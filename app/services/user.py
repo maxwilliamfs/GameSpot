@@ -42,9 +42,9 @@ async def update_user(new_data : UserUpdateSchema, user):
     return user_dict
 
 async def delete_admin(id: str):
-    user = await id_search(id)
+    await id_search(id)
     await users_collection.delete_one({"_id" : ObjectId(id)})
 
 async def delete_user(user):
-    user = await id_search(user.get("_id"))
+    await id_search(user.get("_id"))
     await users_collection.delete_one({"_id": ObjectId(user.get("_id"))})
