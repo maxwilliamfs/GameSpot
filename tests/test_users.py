@@ -1,5 +1,3 @@
-from types import new_class
-
 from fastapi import HTTPException
 import pytest
 from bson import ObjectId

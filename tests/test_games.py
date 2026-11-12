@@ -39,19 +39,6 @@ async def test_create_game(mocker):
     expected_result["_id"] = str(id_)
     assert result == expected_result
 
-@pytest.mark.asyncio
-async def test_update_game_error(mocker):
-    fake_id = str(ObjectId())
-    data = UpdateGameSchema()
-
-    search_mock = mocker.patch(
-        "app.services.game.id_search",
-        new_callable=AsyncMock,
-        return_value=None
-    )
-
-    with pytest.raises(HTTPException):
-        await update(fake_id,data)
 
 @pytest.mark.asyncio
 async def test_update_game(mocker):
@@ -91,18 +78,6 @@ async def test_id_search(mocker):
         await id_search(fake_id)
 
 @pytest.mark.asyncio
-async def test_delete_id_error(mocker):
-    fake_id = str(ObjectId())
-    search_mock = mocker.patch(
-        "app.services.game.id_search",
-        new_callable=AsyncMock,
-        return_value=None
-    )
-
-    with pytest.raises(HTTPException):
-        await delete(fake_id)
-
-@pytest.mark.asyncio
 async def test_delete(mocker):
     fake_id = str(ObjectId())
     search_mock = mocker.patch(
@@ -117,3 +92,23 @@ async def test_delete(mocker):
     )
     await delete(fake_id)
     delete_mock.assert_called_once_with({"_id" : ObjectId(fake_id)})
+
+@pytest.mark.asyncio
+async def test_id_search_invalid(mocker):
+    with pytest.raises(HTTPException) as ex:
+        await id_search("123")
+    assert ex.value.status_code == 400
+
+@pytest.mark.asyncio
+async def test_id_search_none(mocker):
+    fake_id = str(ObjectId())
+    search_mock = mocker.patch.object(
+        games_collection,
+        "find_one",
+        new_callable=AsyncMock,
+        return_value=None
+    )
+
+    with pytest.raises(HTTPException) as ex:
+        await id_search(fake_id)
+    assert ex.value.status_code == 404
