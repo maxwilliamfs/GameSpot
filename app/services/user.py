@@ -21,9 +21,7 @@ async def search(id: str):
     return user
 
 async def update(new_data : UserUpdateAdminSchema, id: str):
-    user_db = await id_search(id)
-    if user_db is None:
-        raise HTTPException(status_code=404, detail="ERROR: User not Found")
+    await id_search(id)
     user_dict = new_data.model_dump(exclude_unset=True)
     await users_collection.update_one({"_id" : ObjectId(id)},{"$set" : user_dict})
     response = await id_search(id)
@@ -31,9 +29,7 @@ async def update(new_data : UserUpdateAdminSchema, id: str):
     return response
 
 async def update_password(id: str, passwordSchema: UserPasswordUpdateSchema):
-    user_db = await id_search(id)
-    if user_db is None:
-        raise HTTPException(status_code=404, detail="ERROR: User not Found")
+    await id_search(id)
     crypt_password = bcrypt_context.hash(passwordSchema.password)
     await users_collection.update_one({"_id" : ObjectId(id)},{"$set" : {"password" : crypt_password}})
 
