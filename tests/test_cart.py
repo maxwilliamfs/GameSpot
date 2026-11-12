@@ -66,16 +66,17 @@ async def test_delete_cart_invalid_game(mocker):
         await delete(fake_user,str(fake_game_id))
 
 @pytest.mark.asyncio
-async def test_delete_cart_invalid_game(mocker):
-    pass
-
-
-# async def delete(user, game_id : str):
-#     user_cart = user.get("cart")
-#
-#     for game in user_cart:
-#         if game_id == game.get("game_id"):
-#             await users_collection.update_one({"_id" : ObjectId(user.get("_id"))},{"$pull":{"cart" : game},"$inc" : {"cart_count" : -1}})
-#             return {"message": "Game removed successfully"}
-#
-#     raise HTTPException(status_code=404,detail="ERROR: Game not found")
+async def test_delete_cart(mocker):
+    fake_id = ObjectId()
+    fake_user_id = ObjectId()
+    fake_user = {
+        "_id": fake_user_id,
+        "cart": [{"game_id": str(fake_id)}]
+    }
+    update_mocker = mocker.patch.object(
+        users_collection,
+        "update_one",
+        new_callable=AsyncMock
+    )
+    await delete(fake_user,str(fake_id))
+    update_mocker.assert_called_once_with({"_id" : fake_user_id},{"$pull":{"cart" : fake_user["cart"][0]},"$inc" : {"cart_count" : -1}})
