@@ -1,14 +1,17 @@
-# GAMESPOT
+# GAMESPOT-Backend
 
 ![Demonstração do Projeto](/assets/docs.png)
 
 API RESTfull programada em Python, com o uso de Webscrapping, banco de dados e docker
+Este repositório é o Backend do GameSpot
+[Frontend do Gamespot](https://github.com/maxwilliamfs/GameSpot-Frontend)
 
 ## Funcionalidades
 - CRUD de jogos e usuários
 - Armazenamento em banco de dados não relacional
 - Obtenção de dados por meio da rede
 - Segurança por meio de JWT
+- Segurança de testes pelo pytest
 
 ## Tecnologias e Ferramentas
 - Linguagem: Python (3.14).
@@ -18,6 +21,7 @@ API RESTfull programada em Python, com o uso de Webscrapping, banco de dados e d
 - Ferramenta de WebScrapping: Selenium
 - Conteinerização: Docker
 - Versionamento: Git & GitHub.
+- Testes: pytest
 
 ## Execução
 ### Execultando pelo terminal
@@ -32,6 +36,11 @@ cd GameSpot
 - Executar projeto:  
 ```bash
 docker compose up --build
+```
+#### Extra
+- Executar testes automatizados:  
+```bash
+pytest -v
 ```
 
 ## Autor
