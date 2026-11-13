@@ -33,7 +33,6 @@ async def update_password(id: str, passwordSchema: UserPasswordUpdateSchema):
     crypt_password = bcrypt_context.hash(passwordSchema.password)
     await users_collection.update_one({"_id" : ObjectId(id)},{"$set" : {"password" : crypt_password}})
 
-
 async def update_user(new_data : UserUpdateSchema, user):
     user_dict = new_data.model_dump(exclude_unset=True)
     result = await users_collection.update_one({"_id" : ObjectId(user.get("_id"))},{"$set" : user_dict})

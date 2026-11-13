@@ -24,7 +24,7 @@ class UserLoginSchema(BaseModel):
     password: str
 
 class UserResponseSchema(BaseModel):
-    _id: str
+    id: str
     name: str
     email: str
     admin: bool
